@@ -1,0 +1,204 @@
+PORT=5000
+WEATHER_API_KEY=YOUR_API_KEY_HERE
+WEATHER_API_URL=https://api.weatherapi.com/v1/current.json
+
+
+json
+
+{
+  "name": "backend-project-4",
+  "version": "1.0.0",
+  "description": "Third Party API Integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
+
+sever.js
+
+require("dotenv").config();
+
+const express = require("express");
+const axios = require("axios");
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(express.json());
+
+let failureCount = 0;
+let circuitOpen = false;
+let circuitOpenedAt = null;
+
+const FAILURE_THRESHOLD = 3;
+const RESET_TIMEOUT = 30000;
+
+function checkCircuit() {
+    if (!circuitOpen) {
+        return false;
+    }
+
+    if (Date.now() - circuitOpenedAt >= RESET_TIMEOUT) {
+        circuitOpen = false;
+        failureCount = 0;
+        circuitOpenedAt = null;
+        return false;
+    }
+
+    return true;
+}
+
+function registerFailure() {
+    failureCount++;
+
+    if (failureCount >= FAILURE_THRESHOLD) {
+        circuitOpen = true;
+        circuitOpenedAt = Date.now();
+    }
+}
+
+function registerSuccess() {
+    failureCount = 0;
+    circuitOpen = false;
+    circuitOpenedAt = null;
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWeather(city) {
+
+    if (checkCircuit()) {
+        return {
+            fallback: true,
+            message: "Weather service temporarily unavailable."
+        };
+    }
+
+    const maxRetries = 3;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+
+        try {
+
+            const response = await axios.get(
+                process.env.WEATHER_API_URL,
+                {
+                    params: {
+                        key: process.env.WEATHER_API_KEY,
+                        q: city
+                    },
+                    timeout: 5000
+                }
+            );
+
+            registerSuccess();
+
+            return response.data;
+
+        } catch (error) {
+
+            if (attempt === maxRetries) {
+                registerFailure();
+                throw error;
+            }
+
+            const waitTime = 1000 * Math.pow(2, attempt - 1);
+
+            await delay(waitTime);
+        }
+    }
+}
+
+function transformWeatherData(data) {
+
+    return {
+        city: data.location?.name || null,
+        country: data.location?.country || null,
+        temperature: data.current?.temp_c ?? null,
+        condition: data.current?.condition?.text || null,
+        humidity: data.current?.humidity ?? null,
+        windSpeed: data.current?.wind_kph ?? null,
+        lastUpdated: data.current?.last_updated || null
+    };
+}
+
+app.get("/", (req, res) => {
+
+    res.json({
+        success: true,
+        message: "Backend Middleware is running"
+    });
+
+});
+
+app.get("/api/weather", async (req, res) => {
+
+    try {
+
+        const city = req.query.city;
+
+        if (!city) {
+            return res.status(400).json({
+                success: false,
+                message: "City is required"
+            });
+        }
+
+        const data = await fetchWeather(city);
+
+        if (data.fallback) {
+            return res.status(503).json({
+                success: false,
+                message: data.message
+            });
+        }
+
+        const weather = transformWeatherData(data);
+
+        res.status(200).json({
+            success: true,
+            data: weather
+        });
+
+    } catch (error) {
+
+        console.error(error.message);
+
+        if (error.response) {
+
+            return res.status(502).json({
+                success: false,
+                message: "External weather service error",
+                status: error.response.status
+            });
+
+        }
+
+        if (error.request) {
+
+            return res.status(504).json({
+                success: false,
+                message: "Weather service timeout or unavailable"
+            });
+
+        }
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+});
+
