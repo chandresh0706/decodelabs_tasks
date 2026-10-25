@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DecodeLabs - Cloud Project 2</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e3a8a);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 50px;
+            max-width: 700px;
+        }
+
+        h1 {
+            font-size: 52px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 20px;
+            margin-bottom: 30px;
+            color: #dbeafe;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            font-size: 17px;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #2563eb;
+            border-radius: 30px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Welcome to DecodeLabs 🚀</h1>
+
+        <p>
+            Cloud Computing - Project 2
+        </p>
+
+        <div class="card">
+
+            <h2>The Server Commander</h2>
+
+            <p>
+                Linux Virtual Machine successfully deployed.
+            </p>
+
+            <p>
+                Apache Web Server is running successfully.
+            </p>
+
+            <p>
+                Hosted on Cloud Infrastructure.
+            </p>
+
+            <span class="badge">
+                DecodeLabs | Cloud Computing
+            </span>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
